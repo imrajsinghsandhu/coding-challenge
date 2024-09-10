@@ -8,6 +8,7 @@ logger = logging.getLogger(__name__)
 
 @app.route('/', methods=['GET'])
 def default_route():
+    logging.info("Starting application ...")
     return 'Python Template'
 
 
@@ -20,7 +21,6 @@ logger.addHandler(handler)
 logger.setLevel(logging.INFO)
 
 if __name__ == "__main__":
-    logging.info("Starting application ...")
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.bind(('localhost', 8080))
     port = sock.getsockname()[1]
