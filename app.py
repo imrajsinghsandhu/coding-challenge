@@ -9,6 +9,7 @@ logger = logging.getLogger(__name__)
 @app.route('/', methods=['GET'])
 def default_route():
     logging.info("Starting application ...")
+    print("GYATTTT requesttt")
     return 'Python Template'
 
 
