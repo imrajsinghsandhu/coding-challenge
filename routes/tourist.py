@@ -1,3 +1,4 @@
+import json
 from flask import Flask, request, jsonify
 import logging
 
@@ -100,4 +101,4 @@ def tourist():
     # Add the start station at the end to complete the loop
     best_path.append(start_station)
 
-    return jsonify({"path": best_path, "satisfaction": best_satisfaction})
+    return json.dumps({"path": best_path, "satisfaction": best_satisfaction})
