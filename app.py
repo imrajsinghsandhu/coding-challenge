@@ -1,5 +1,6 @@
 import logging
 import socket
+from flask import request
 
 from routes import app
 
@@ -10,7 +11,6 @@ logger = logging.getLogger(__name__)
 def default_route():
     logging.info("Starting application ...")
     return 'Python Template'
-
 
 logger = logging.getLogger()
 handler = logging.StreamHandler()

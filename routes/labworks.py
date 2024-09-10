@@ -1,5 +1,5 @@
 import json
-from flask import Flask, request
+from flask import Flask, request, jsonify
 import re
 
 from routes import app
@@ -72,4 +72,4 @@ def lab_work():
     input_data = request.json
     lab_data = parse_input(input_data)
     results = simulate_lab_work(lab_data)
-    return json.dumps(results)
+    return jsonify(results)
