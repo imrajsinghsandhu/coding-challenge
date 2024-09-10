@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify
+import logging
 
 app = Flask(__name__)
 
@@ -81,6 +82,7 @@ def find_optimal_path(current_station, stations, station_times, travel_times_per
 # POST endpoint to calculate the optimal tourist route
 @app.route('/tourist', methods=['POST'])
 def tourist():
+    logging.info(data)
     data = request.json
     station_times = data['station_times']  # dict of stations with (satisfaction, min_time)
     start_station = data['start_station']  # starting and ending station
