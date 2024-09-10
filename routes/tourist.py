@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify
 import logging
 
-app = Flask(__name__)
+from routes import app
 
 # Constants for travel times between stations (time in minutes)
 travel_times_per_line = {
@@ -101,6 +101,3 @@ def tourist():
     best_path.append(start_station)
 
     return jsonify({"path": best_path, "satisfaction": best_satisfaction})
-
-if __name__ == '__main__':
-    app.run(debug=True)

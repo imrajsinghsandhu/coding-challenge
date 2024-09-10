@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify
 import re
 
-app = Flask(__name__)
+from routes import app
 
 def parse_input(input_data):
     lab_data = []
@@ -72,6 +72,3 @@ def lab_work():
     lab_data = parse_input(input_data)
     results = simulate_lab_work(lab_data)
     return jsonify(results)
-
-if __name__ == '__main__':
-    app.run(debug=True)
