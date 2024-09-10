@@ -83,6 +83,6 @@ def find_optimal_path(current_station, stations, station_times, travel_times_per
 # POST endpoint to calculate the optimal tourist route
 @app.route('/tourist/evaluate', methods=['POST'])
 def tourist():
-    data = request.json()
+    data = request.json
     logging.info(data)
     return jsonify({"path": 1, "satisfaction": 1})
