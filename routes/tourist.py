@@ -1,88 +1,52 @@
-import json
 from flask import Flask, request, jsonify
-import logging
 
-from routes import app
+app = Flask(__name__)
 
-# Constants for travel times between stations (time in minutes)
-travel_times_per_line = {
-    "Tokyo Metro Ginza Line": 2,
-    "Tokyo Metro Marunouchi Line": 3,
-    "Tokyo Metro Hibiya Line": 2.5,
-    "Tokyo Metro Tozai Line": 4,
-    "Tokyo Metro Chiyoda Line": 1.5,
-    "Tokyo Metro Yurakucho Line": 2,
-    "Tokyo Metro Hanzomon Line": 2,
-    "Tokyo Metro Namboku Line": 1,
-    "Tokyo Metro Fukutoshin Line": 3,
-    "Toei Asakusa Line": 3.5,
-    "Toei Mita Line": 4,
-    "Toei Shinjuku Line": 1.5,
-    "Toei Oedo Line": 1
-}
-
-# Subway stations map for each line
-subway_stations = {
-    "Tokyo Metro Ginza Line": [
-        "Asakusa", "Tawaramachi", "Inaricho", "Ueno", "Ueno-hirokoji", "Suehirocho",
-        "Kanda", "Mitsukoshimae", "Nihombashi", "Kyobashi", "Ginza", "Shimbashi",
-        "Toranomon", "Tameike-sanno", "Akasaka-mitsuke", "Nagatacho", "Aoyama-itchome",
-        "Gaiemmae", "Omotesando", "Shibuya"
-    ],
-    "Tokyo Metro Marunouchi Line": [
-        "Ogikubo", "Minami-asagaya", "Shin-koenji", "Higashi-koenji", "Shin-nakano",
-        "Nakano-sakaue", "Nishi-shinjuku", "Shinjuku", "Shinjuku-sanchome", "Shin-ochanomizu",
-        "Ochanomizu", "Awajicho", "Otemachi", "Tokyo", "Ginza", "Kasumigaseki", "Kokkai-gijidomae",
-        "Akasaka-mitsuke", "Yotsuya", "Yotsuya-sanchome", "Shinjuku-gyoemmae", "Nishi-shinjuku-gochome",
-        "Nakano-fujimicho", "Nakano-shimbashi", "Nakano-sakaue", "Shinjuku-sanchome", "Kokkai-gijidomae",
-        "Kasumigaseki", "Ginza", "Tokyo", "Otemachi", "Awajicho", "Shin-ochanomizu", "Ochanomizu"
-    ],
-    # Add the rest of the lines
-}
-
-# Helper function to calculate the total travel time between two stations
-def calculate_travel_time(path, travel_times_per_line):
-    total_travel_time = 0
-    for i in range(len(path) - 1):
-        for line, stations in subway_stations.items():
-            if path[i] in stations and path[i+1] in stations:
-                total_travel_time += travel_times_per_line[line]
-                break
-    return total_travel_time
-
-# Helper function to calculate the total time for a given path
-def calculate_total_time(path, station_times, travel_times_per_line):
-    travel_time = calculate_travel_time(path, travel_times_per_line)
-    visit_time = sum([station_times[station][1] for station in path])
-    return travel_time + visit_time
-
-# Helper function to calculate the total satisfaction for a given path
-def calculate_total_satisfaction(path, station_times):
-    return sum([station_times[station][0] for station in path])
-
-# Backtracking function to find the optimal path
-def find_optimal_path(current_station, stations, station_times, travel_times_per_line, time_limit, current_path, best_path, best_satisfaction):
-    if calculate_total_time(current_path, station_times, travel_times_per_line) > time_limit:
-        return best_path, best_satisfaction
-
-    current_satisfaction = calculate_total_satisfaction(current_path, station_times)
-    if current_satisfaction > best_satisfaction:
-        best_path = list(current_path)
+def find_best_path(locations, starting_point, time_limit, travel_times):
+    # Helper function to calculate satisfaction and time spent
+    def dfs(current_station, remaining_time, current_satisfaction, visited_stations):
+        if remaining_time < 0:
+            return 0, []
+        
+        # If the station path loops back to the starting point, return satisfaction gained
+        if current_station == starting_point and visited_stations:
+            return current_satisfaction, visited_stations
+        
         best_satisfaction = current_satisfaction
+        best_path = visited_stations[:]
+        
+        for station, (satisfaction, visit_time) in locations.items():
+            if station not in visited_stations:
+                # Calculate travel time to the next station
+                travel_time = travel_times.get((current_station, station), float('inf'))
+                # Check if visiting this station is possible within the remaining time
+                total_time_spent = travel_time + visit_time
+                if remaining_time - total_time_spent >= 0:
+                    new_satisfaction, new_path = dfs(
+                        station, remaining_time - total_time_spent, 
+                        current_satisfaction + satisfaction, 
+                        visited_stations + [station]
+                    )
+                    if new_satisfaction > best_satisfaction:
+                        best_satisfaction = new_satisfaction
+                        best_path = new_path
+        
+        return best_satisfaction, best_path
 
-    for next_station in stations:
-        if next_station not in current_path:
-            current_path.append(next_station)
-            best_path, best_satisfaction = find_optimal_path(
-                next_station, stations, station_times, travel_times_per_line, time_limit, current_path, best_path, best_satisfaction
-            )
-            current_path.pop()
+    # Initialize DFS from the starting point
+    satisfaction, path = dfs(starting_point, time_limit, 0, [starting_point])
+    
+    # Return to the starting point
+    return {'path': path + [starting_point], 'satisfaction': satisfaction}
 
-    return best_path, best_satisfaction
-
-# POST endpoint to calculate the optimal tourist route
 @app.route('/tourist', methods=['POST'])
 def tourist():
     data = request.json
-    logging.info(data)
-    return jsonify({"path": 1, "satisfaction": 1})
+    locations = data['locations']
+    starting_point = data['startingPoint']
+    time_limit = data['timeLimit']
+    travel_times = data.get('travelTimes', {})
+    
+    result = find_best_path(locations, starting_point, time_limit, travel_times)
+    
+    return jsonify(result)
