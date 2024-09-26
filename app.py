@@ -1,8 +1,10 @@
 import logging
 import socket
-from flask import request
-from routes import app
+from flask import Flask, request
 from routes.tourist import tourist_bp  # Import the tourist blueprint
+
+# Create the Flask app here in app.py
+app = Flask(__name__)
 
 # Set up logging
 logger = logging.getLogger(__name__)
