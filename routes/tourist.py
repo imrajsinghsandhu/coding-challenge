@@ -122,6 +122,7 @@ def get_travel_time(station1, station2):
 
 def tourist_attractions_dp(locations, starting_point, time_limit):
     heap = []
+    # (current_satisfaction, time_spent, current_station, path)
     heapq.heappush(heap, (0, 0, starting_point, [starting_point]))
 
     best_satisfaction = 0
@@ -133,32 +134,45 @@ def tourist_attractions_dp(locations, starting_point, time_limit):
         if time_spent > time_limit:
             continue
 
+        # Check if this is the best satisfaction found
         if current_satisfaction > best_satisfaction:
             best_satisfaction = current_satisfaction
             best_path = path
 
+        # Try visiting the next station
         for next_station, (satisfaction, min_time) in locations.items():
             if next_station in path:
-                continue
+                continue  # Don't revisit the same station
 
             travel_time = get_travel_time(current_station, next_station)
-            if travel_time == float('inf'):
+            if travel_time == float('inf'):  # No direct route
                 continue
 
+            # Calculate the new time spent
             new_time_spent = time_spent + travel_time + min_time
             if new_time_spent <= time_limit:
                 new_satisfaction = current_satisfaction + satisfaction
                 new_path = path + [next_station]
                 heapq.heappush(heap, (new_satisfaction, new_time_spent, next_station, new_path))
 
+    # Ensure we return to the starting point at the end
+    if best_path and best_path[-1] != starting_point:
+        travel_time = get_travel_time(best_path[-1], starting_point)
+        if travel_time + time_spent <= time_limit:
+            best_path.append(starting_point)
+
     return {"path": best_path, "satisfaction": best_satisfaction}
 
 @tourist_bp.route('/tourist', methods=['POST'])
 def tourist_route():
-    data = request.json
-    locations = data.get("locations")
-    starting_point = data.get("startingPoint")
-    time_limit = data.get("timeLimit")
-    
-    result = tourist_attractions_dp(locations, starting_point, time_limit)
-    return jsonify(result)
+    try:
+        data = request.json
+        locations = data.get("locations")
+        starting_point = data.get("startingPoint")
+        time_limit = data.get("timeLimit")
+
+        result = tourist_attractions_dp(locations, starting_point, time_limit)
+        return jsonify(result)
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
