@@ -81,7 +81,7 @@ def find_optimal_path(current_station, stations, station_times, travel_times_per
     return best_path, best_satisfaction
 
 # POST endpoint to calculate the optimal tourist route
-@app.route('/tourist/evaluate', methods=['POST'])
+@app.route('/tourist', methods=['POST'])
 def tourist():
     data = request.json
     logging.info(data)
