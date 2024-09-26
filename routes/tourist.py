@@ -1,7 +1,6 @@
 from flask import Blueprint, request, jsonify
-import itertools
+import heapq
 
-# Blueprint for tourist routes
 tourist_bp = Blueprint('tourist', __name__)
 
 # Constants for subway lines and travel times
@@ -115,85 +114,51 @@ SUBWAY_LINES = {
     ]
 }
 
-def get_line_between_stations(station1, station2):
+def get_travel_time(station1, station2):
     for line, stations in SUBWAY_LINES.items():
         if station1 in stations and station2 in stations:
-            print(f"Line found between {station1} and {station2}: {line}")
-            return line
-    print(f"No line found between {station1} and {station2}")
-    return None
+            return SUBWAY_TRAVEL_TIMES[line]
+    return float('inf')  # No direct connection
 
+def tourist_attractions_dp(locations, starting_point, time_limit):
+    heap = []
+    heapq.heappush(heap, (0, 0, starting_point, [starting_point]))
 
-def calculate_path(locations, starting_point, time_limit):
-    stations = list(locations.keys())
-    stations.remove(starting_point)
-
-    print(f"Stations for permutation: {stations}")
-    
     best_satisfaction = 0
     best_path = []
 
-    # Iterate over all possible permutations of the stations
-    for perm in itertools.permutations(stations):
-        path = [starting_point] + list(perm) + [starting_point]
-        print(f"Checking path: {path}")
+    while heap:
+        current_satisfaction, time_spent, current_station, path = heapq.heappop(heap)
 
-        total_time = 0
-        total_satisfaction = 0
-        valid_path = True
-        
-        # Check each station in the path
-        for i in range(len(path) - 1):
-            current_station = path[i]
-            next_station = path[i + 1]
-            
-            # Determine the subway line connecting the stations
-            line = get_line_between_stations(current_station, next_station)
-            if line is None:
-                valid_path = False
-                break
-            
-            # Add travel time between the stations
-            travel_time = SUBWAY_TRAVEL_TIMES.get(line, 2)
-            total_time += travel_time
+        if time_spent > time_limit:
+            continue
 
-            print(f"Travel time from {current_station} to {next_station} is {travel_time} mins")
-            
-            # Add time and satisfaction for the current station
-            satisfaction, min_time = locations[current_station]
-            total_time += min_time
-            total_satisfaction += satisfaction
-
-            print(f"Satisfaction: {satisfaction}, Min time spent: {min_time}, Total time: {total_time}")
-            
-            # Break if time limit exceeded
-            if total_time > time_limit:
-                print(f"Time limit exceeded: {total_time} > {time_limit}")
-                valid_path = False
-                break
-        
-        # If valid and provides better satisfaction, update the best path
-        if valid_path and total_satisfaction > best_satisfaction:
-            best_satisfaction = total_satisfaction
+        if current_satisfaction > best_satisfaction:
+            best_satisfaction = current_satisfaction
             best_path = path
-            print(f"New best path: {best_path} with satisfaction {best_satisfaction}")
 
-    return best_path, best_satisfaction
+        for next_station, (satisfaction, min_time) in locations.items():
+            if next_station in path:
+                continue
 
+            travel_time = get_travel_time(current_station, next_station)
+            if travel_time == float('inf'):
+                continue
 
-# Define the /tourist route here
+            new_time_spent = time_spent + travel_time + min_time
+            if new_time_spent <= time_limit:
+                new_satisfaction = current_satisfaction + satisfaction
+                new_path = path + [next_station]
+                heapq.heappush(heap, (new_satisfaction, new_time_spent, next_station, new_path))
+
+    return {"path": best_path, "satisfaction": best_satisfaction}
+
 @tourist_bp.route('/tourist', methods=['POST'])
-def tourist():
+def tourist_route():
     data = request.json
     locations = data.get("locations")
     starting_point = data.get("startingPoint")
     time_limit = data.get("timeLimit")
     
-    # Calculate the optimal path
-    best_path, best_satisfaction = calculate_path(locations, starting_point, time_limit)
-    
-    # Return the result as JSON
-    return jsonify({
-        "path": best_path,
-        "satisfaction": best_satisfaction
-    })
+    result = tourist_attractions_dp(locations, starting_point, time_limit)
+    return jsonify(result)
