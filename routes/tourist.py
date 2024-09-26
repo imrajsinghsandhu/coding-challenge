@@ -118,19 +118,26 @@ SUBWAY_LINES = {
 def get_line_between_stations(station1, station2):
     for line, stations in SUBWAY_LINES.items():
         if station1 in stations and station2 in stations:
+            print(f"Line found between {station1} and {station2}: {line}")
             return line
+    print(f"No line found between {station1} and {station2}")
     return None
+
 
 def calculate_path(locations, starting_point, time_limit):
     stations = list(locations.keys())
     stations.remove(starting_point)
+
+    print(f"Stations for permutation: {stations}")
     
     best_satisfaction = 0
     best_path = []
-    
+
     # Iterate over all possible permutations of the stations
     for perm in itertools.permutations(stations):
         path = [starting_point] + list(perm) + [starting_point]
+        print(f"Checking path: {path}")
+
         total_time = 0
         total_satisfaction = 0
         valid_path = True
@@ -149,14 +156,19 @@ def calculate_path(locations, starting_point, time_limit):
             # Add travel time between the stations
             travel_time = SUBWAY_TRAVEL_TIMES.get(line, 2)
             total_time += travel_time
+
+            print(f"Travel time from {current_station} to {next_station} is {travel_time} mins")
             
             # Add time and satisfaction for the current station
             satisfaction, min_time = locations[current_station]
             total_time += min_time
             total_satisfaction += satisfaction
+
+            print(f"Satisfaction: {satisfaction}, Min time spent: {min_time}, Total time: {total_time}")
             
             # Break if time limit exceeded
             if total_time > time_limit:
+                print(f"Time limit exceeded: {total_time} > {time_limit}")
                 valid_path = False
                 break
         
@@ -164,8 +176,10 @@ def calculate_path(locations, starting_point, time_limit):
         if valid_path and total_satisfaction > best_satisfaction:
             best_satisfaction = total_satisfaction
             best_path = path
-    
+            print(f"New best path: {best_path} with satisfaction {best_satisfaction}")
+
     return best_path, best_satisfaction
+
 
 # Define the /tourist route here
 @tourist_bp.route('/tourist', methods=['POST'])
