@@ -114,53 +114,67 @@ SUBWAY_LINES = {
     ]
 }
 
-def get_travel_time(station1, station2):
-    for line, stations in SUBWAY_LINES.items():
-        if station1 in stations and station2 in stations:
-            return SUBWAY_TRAVEL_TIMES[line]
-    return float('inf')  # No direct connection
-
-def tourist_attractions_dp(locations, starting_point, time_limit):
-    heap = []
-    # (current_satisfaction, time_spent, current_station, path)
-    heapq.heappush(heap, (0, 0, starting_point, [starting_point]))
-
+def tourist_attractions_dp(locations, starting_point, time_limit_minutes):
+    time_limit_seconds = time_limit_minutes * 60  # Convert the time limit to seconds
+    stations = list(locations.keys())
+    station_count = len(stations)
+    
+    # DP table: dp[i][t] will store the maximum satisfaction we can get by visiting station i with t seconds
+    dp = [[-1 for _ in range(time_limit_seconds + 1)] for _ in range(station_count)]
+    dp[stations.index(starting_point)][0] = 0  # Start at the initial station with 0 time
+    
+    # Track the path
+    path_track = [[[] for _ in range(time_limit_seconds + 1)] for _ in range(station_count)]
+    
+    # Function to get travel time between two stations (returns time in seconds)
+    def get_travel_time(station1, station2):
+        for line, stations_in_line in SUBWAY_LINES.items():
+            if station1 in stations_in_line and station2 in stations_in_line:
+                return SUBWAY_TRAVEL_TIMES[line] * 60  # Convert travel time to seconds
+        return float('inf')  # No direct connection
+    
+    # DP loop: visit each station and attempt to move to other stations
+    for t in range(time_limit_seconds):
+        for i in range(station_count):
+            if dp[i][t] == -1:  # Skip if no valid path to this station at time t
+                continue
+            current_station = stations[i]
+            
+            # Try visiting every other station
+            for j in range(station_count):
+                if i == j:
+                    continue
+                next_station = stations[j]
+                travel_time = get_travel_time(current_station, next_station)
+                if travel_time == float('inf'):  # No valid connection
+                    continue
+                
+                # Time and satisfaction for the next station (min_time_spent is converted to seconds)
+                next_station_satisfaction, min_time_spent_minutes = locations[next_station]
+                min_time_spent_seconds = min_time_spent_minutes * 60  # Convert to seconds
+                
+                new_time = int(t + travel_time + min_time_spent_seconds)  # Convert new_time to int
+                
+                if new_time > time_limit_seconds:  # Make sure new_time is within the limit
+                    continue
+                
+                # Update DP table if this path gives better satisfaction
+                new_satisfaction = dp[i][t] + next_station_satisfaction
+                if new_satisfaction > dp[j][new_time]:
+                    dp[j][new_time] = new_satisfaction
+                    path_track[j][new_time] = path_track[i][t] + [next_station]
+    
+    # Find the best satisfaction achievable within the time limit
     best_satisfaction = 0
     best_path = []
-
-    while heap:
-        current_satisfaction, time_spent, current_station, path = heapq.heappop(heap)
-
-        if time_spent > time_limit:
-            continue
-
-        # Check if this is the best satisfaction found
-        if current_satisfaction > best_satisfaction:
-            best_satisfaction = current_satisfaction
-            best_path = path
-
-        # Try visiting the next station
-        for next_station, (satisfaction, min_time) in locations.items():
-            if next_station in path:
-                continue  # Don't revisit the same station
-
-            travel_time = get_travel_time(current_station, next_station)
-            if travel_time == float('inf'):  # No direct route
-                continue
-
-            # Calculate the new time spent
-            new_time_spent = time_spent + travel_time + min_time
-            if new_time_spent <= time_limit:
-                new_satisfaction = current_satisfaction + satisfaction
-                new_path = path + [next_station]
-                heapq.heappush(heap, (new_satisfaction, new_time_spent, next_station, new_path))
-
-    # Ensure we return to the starting point at the end
-    if best_path and best_path[-1] != starting_point:
-        travel_time = get_travel_time(best_path[-1], starting_point)
-        if travel_time + time_spent <= time_limit:
-            best_path.append(starting_point)
-
+    for t in range(time_limit_seconds + 1):
+        if dp[stations.index(starting_point)][t] > best_satisfaction:
+            best_satisfaction = dp[stations.index(starting_point)][t]
+            best_path = path_track[stations.index(starting_point)][t]
+    
+    # Add the starting point at the beginning and end of the path
+    best_path = [starting_point] + best_path + [starting_point]
+    
     return {"path": best_path, "satisfaction": best_satisfaction}
 
 @tourist_bp.route('/tourist', methods=['POST'])
@@ -172,7 +186,7 @@ def tourist_route():
         time_limit = data.get("timeLimit")
 
         result = tourist_attractions_dp(locations, starting_point, time_limit)
-        return {'path': ['Yushima', 'Shibuya', 'Nakano'], 'satisfaction': 50}
+        return jsonify(result)
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
