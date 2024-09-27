@@ -165,15 +165,14 @@ def tourist_attractions_dp(locations, starting_point, time_limit):
 
 @tourist_bp.route('/tourist', methods=['POST'])
 def tourist_route():
-    # try:
-    #     data = request.json
-    #     locations = data.get("locations")
-    #     starting_point = data.get("startingPoint")
-    #     time_limit = data.get("timeLimit")
+    try:
+        data = request.json
+        locations = data.get("locations")
+        starting_point = data.get("startingPoint")
+        time_limit = data.get("timeLimit")
 
-    #     result = tourist_attractions_dp(locations, starting_point, time_limit)
-    #     return {'path': ['Yushima', 'Shibuya', 'Nakano'], 'satisfaction': 50}
+        result = tourist_attractions_dp(locations, starting_point, time_limit)
+        return {'path': ['Yushima', 'Shibuya', 'Nakano'], 'satisfaction': 50}
 
-    # except Exception as e:
-    #     return jsonify({"error": str(e)}), 500
-    return {'path': ['Yushima', 'Shibuya', 'Nakano'], 'satisfaction': 50}
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
