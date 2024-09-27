@@ -1,9 +1,5 @@
-from flask import Blueprint, request, jsonify
 import heapq
 
-tourist_bp = Blueprint('tourist', __name__)
-
-# Constants for subway lines and travel times
 SUBWAY_TRAVEL_TIMES = {
     "Tokyo Metro Ginza Line": 2,
     "Tokyo Metro Marunouchi Line": 3,
@@ -20,7 +16,6 @@ SUBWAY_TRAVEL_TIMES = {
     "Toei Oedo Line": 1
 }
 
-# Subway lines with their respective stations
 SUBWAY_LINES = {
     "Tokyo Metro Ginza Line": [
         "Asakusa", "Tawaramachi", "Inaricho", "Ueno", "Ueno-hirokoji", "Suehirocho",
@@ -177,12 +172,31 @@ def tourist_attractions_dp(locations, starting_point, time_limit_minutes):
     
     return {"path": best_path, "satisfaction": best_satisfaction}
 
-@tourist_bp.route('/tourist', methods=['POST'])
-def tourist_route():
-    data = request.json
-    locations = data.get("locations")
-    starting_point = data.get("startingPoint")
-    time_limit = data.get("timeLimit")
 
-    result = tourist_attractions_dp(locations, starting_point, time_limit)
-    return jsonify(result)
+locations = {
+    "Magome": [0, 0], "Nagatacho": [41, 25], "Sugamo": [26, 35], "Nishigahara": [35, 15], 
+    "Tsukishima": [36, 15], "Inaricho": [45, 15], "Nezu": [19, 20], "Monzen-nakacho": [22, 15], 
+    "Kodemmacho": [40, 15], "Hasune": [41, 15], "Uchisaiwaicho": [36, 20], "Meiji-jingumae": [34, 35], 
+    "Mitsukoshimae": [21, 25], "Asakusa": [29, 20], "Kikukawa": [36, 20], "Shin-ochanomizu": [35, 30], 
+    "Ginza": [12, 15], "Nishi-ojima": [12, 15], "Akabane-iwabuchi": [13, 30], "Roppongi-itchome": [18, 35], 
+    "Shimura-sakaue": [13, 15], "Gokokuji": [45, 35], "Motohasunuma": [16, 30], "Sendagi": [33, 30], 
+    "Ichinoe": [32, 30], "Kudanshita": [11, 25], "Awajicho": [29, 20], "Kasai": [23, 30], 
+    "Zoshigaya": [29, 35], "Shimura-sanchome": [45, 30], "Ueno-hirokoji": [34, 35], "Ikebukuro": [41, 30], 
+    "Sengakuji": [43, 25], "Nijubashimae": [14, 30], "Baraki-nakayama": [44, 35], "Chikatetsu-akatsuka": [45, 30], 
+    "Ueno-okachimachi": [17, 20], "Tawaramachi": [14, 35], "Ryogoku": [15, 15], "Kojimachi": [22, 35], 
+    "Toranomon": [14, 30], "Higashi-shinjuku": [19, 15], "Akihabara": [44, 25], "Akasaka-mitsuke": [22, 25], 
+    "Ueno": [37, 20], "Gotanda": [26, 35], "Todaimae": [41, 20], "Kinshicho": [17, 35], "Ojima": [13, 25], 
+    "Wakoshi": [35, 15], "Nishi-sugamo": [10, 20], "Kamiyacho": [33, 15], "Yotsuya": [18, 35], 
+    "Kanda": [12, 25], "Shiba-koen": [14, 35], "Shibuya": [28, 30], "Onarimon": [21, 20], 
+    "Iidabashi": [28, 15], "Iriya": [27, 25], "Ushigome-kagurazaka": [23, 30], "Suitengumae": [10, 25], 
+    "Shin-takashimadaira": [10, 20], "Ginza-itchome": [33, 20], "Kita-ayase": [20, 20], "Otemachi": [43, 25], 
+    "Tameike-sanno": [16, 15], "Aoyama-itchome": [19, 25], "Nakano-fujimicho": [10, 30], 
+    "Naka-okachimachi": [19, 30], "Hamacho": [26, 15], "Kokkai-gijidomae": [42, 35], "Sumiyoshi": [37, 35], 
+    "Ebisu": [39, 25], "Nishi-waseda": [16, 30], "Nishi-magome": [45, 20], "Higashi-ikebukuro": [16, 20], 
+    "Hanzomon": [35, 15], "Kita-sando": [42, 35], "Shinonome": [13, 35], "Shinjuku-nishiguchi": [15, 25]
+}
+starting_point = "Magome"
+time_limit = 480
+
+result = tourist_attractions_dp(locations, starting_point, time_limit)
+print(result)
